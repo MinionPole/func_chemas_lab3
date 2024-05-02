@@ -1,0 +1,110 @@
+module lru_buffer(clk, rst, valid_data, data);
+    input clk, rst, valid_data;
+    input [7:0] data;
+    reg [7:0] outs[3:0];
+    
+    reg[3:0] state;
+    
+    reg [3:0] hitIndex; // reg to counting
+    reg [3:0] index; // last in MRU
+    
+    integer j;
+    localparam [3:0] IDLE = 4'b0000, CHECKING_HIT = 4'b0001, FIND_FREE = 4'b0010, HIT_UPDATING = 4'b0011, WRITE_VALUE = 4'b0100;
+   
+
+
+    always @ (posedge clk, negedge rst) begin
+        if (!rst) begin
+            outs[0] <= 8'd0;
+            outs[1] <= 8'd0;
+            outs[2] <= 8'd0;
+            outs[3] <= 8'd0;
+            hitIndex <= 4'd0;
+            index <= 4'd0;
+            state <= IDLE;
+        end else
+        case(state)
+            IDLE: begin
+                if(valid_data) begin 
+                    state <= CHECKING_HIT;
+                    hitIndex <= 0;
+                end
+            end
+            CHECKING_HIT: begin
+                if(hitIndex > 3) begin
+                state <= FIND_FREE;
+                hitIndex <= 0;
+                end
+                else begin
+                    case(hitIndex)
+                            0:  begin
+                                if(outs[0] == data) state <= HIT_UPDATING;
+                                else hitIndex <= hitIndex + 1;  
+                            end
+                            1:  begin  
+                                if(outs[1] == data) state <= HIT_UPDATING;
+                                else hitIndex <= hitIndex + 1;  
+                            end
+                            2:  begin
+                                if(outs[2] == data) state <= HIT_UPDATING;
+                                else hitIndex <= hitIndex + 1;  
+                            end                            
+                            3:  begin
+                                if(outs[3] == data) state <= HIT_UPDATING;
+                                else hitIndex <= hitIndex + 1;  
+                            end
+                    endcase                                 
+                end
+            end
+            FIND_FREE: begin
+                if(hitIndex > 3) begin
+                state <= WRITE_VALUE;
+                end
+                else begin
+                    case(hitIndex)
+                            0:  begin
+                                if(outs[0] == 8'd0)
+                                begin
+                                    index <= hitIndex;
+                                    state <= WRITE_VALUE;
+                                end
+                                else hitIndex <= hitIndex + 1;  
+                            end
+                            1:  begin  
+                                if(outs[1] == 8'd0) begin
+                                    index <= hitIndex;
+                                    state <= WRITE_VALUE;
+                                end
+                                else hitIndex <= hitIndex + 1;  
+                            end
+                            2:  begin
+                                if(outs[2] == 8'd0)begin
+                                    index <= hitIndex;
+                                    state <= WRITE_VALUE;
+                                end
+                                else hitIndex <= hitIndex + 1;  
+                            end                            
+                            3:  begin
+                                if(outs[3] == 8'd0) begin
+                                    index <= hitIndex;
+                                    state <= WRITE_VALUE;
+                                end
+                                else hitIndex <= hitIndex + 1;  
+                            end
+                    endcase                                 
+                end
+            end
+            HIT_UPDATING: begin
+                index <= hitIndex;
+            end
+            WRITE_VALUE: begin
+                case (index):
+                0: outs[0] <= data;
+                1: outs[1] <= data;
+                2: outs[2] <= data;
+                3: outs[3] <= data;
+                endcase
+            end
+        endcase
+    end
+endmodule
