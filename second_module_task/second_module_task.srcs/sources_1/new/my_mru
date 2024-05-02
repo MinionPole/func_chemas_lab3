@@ -1,110 +1,111 @@
-module lru_buffer(clk, rst, valid_data, data);
-    input clk, rst, valid_data;
-    input [7:0] data;
-    reg [7:0] outs[3:0];
-    
+module lru_buffer(clk, rst, set, data, enable);
+    input clk, rst, set, enable;
+    input [15:0] data;
+    reg [15:0] dataCopy;
+    reg [15:0] outs[7:0];
     reg[3:0] state;
     
     reg [3:0] hitIndex; // reg to counting
     reg [3:0] index; // last in MRU
-    
-    integer j;
+    reg [3:0] freeEl; // first free_el
+
+
     localparam [3:0] IDLE = 4'b0000, CHECKING_HIT = 4'b0001, FIND_FREE = 4'b0010, HIT_UPDATING = 4'b0011, WRITE_VALUE = 4'b0100;
-   
 
 
     always @ (posedge clk, negedge rst) begin
-        if (!rst) begin
-            outs[0] <= 8'd0;
-            outs[1] <= 8'd0;
-            outs[2] <= 8'd0;
-            outs[3] <= 8'd0;
-            hitIndex <= 4'd0;
-            index <= 4'd0;
-            state <= IDLE;
-        end else
-        case(state)
-            IDLE: begin
-                if(valid_data) begin 
-                    state <= CHECKING_HIT;
-                    hitIndex <= 0;
+        if(enable)
+        begin
+            if (!rst) begin
+                outs[0] <= 16'd0;
+                outs[1] <= 16'd0;
+                outs[2] <= 16'd0;
+                outs[3] <= 16'd0;
+                
+                outs[4] <= 16'd0;
+                outs[5] <= 16'd0;
+                outs[6] <= 16'd0;
+                outs[7] <= 16'd0;
+                
+                dataCopy <= 16'd0;
+
+                hitIndex <= 4'd0;
+                index <= 4'd0;
+                freeEl <= 4'd0;
+                
+                state <= IDLE;
+            end else
+            case(state)
+                IDLE: begin
+                    if(set) begin 
+                        state <= CHECKING_HIT;
+                        dataCopy <= data;
+                        hitIndex <= 0;
+                    end
                 end
-            end
-            CHECKING_HIT: begin
-                if(hitIndex > 3) begin
-                state <= FIND_FREE;
-                hitIndex <= 0;
-                end
-                else begin
-                    case(hitIndex)
-                            0:  begin
-                                if(outs[0] == data) state <= HIT_UPDATING;
-                                else hitIndex <= hitIndex + 1;  
-                            end
-                            1:  begin  
-                                if(outs[1] == data) state <= HIT_UPDATING;
-                                else hitIndex <= hitIndex + 1;  
-                            end
-                            2:  begin
-                                if(outs[2] == data) state <= HIT_UPDATING;
-                                else hitIndex <= hitIndex + 1;  
-                            end                            
-                            3:  begin
-                                if(outs[3] == data) state <= HIT_UPDATING;
-                                else hitIndex <= hitIndex + 1;  
-                            end
-                    endcase                                 
-                end
-            end
-            FIND_FREE: begin
-                if(hitIndex > 3) begin
-                state <= WRITE_VALUE;
-                end
-                else begin
-                    case(hitIndex)
-                            0:  begin
-                                if(outs[0] == 8'd0)
-                                begin
-                                    index <= hitIndex;
-                                    state <= WRITE_VALUE;
+                CHECKING_HIT: begin
+                    if(hitIndex > 3) begin
+                    state <= WRITE_VALUE;
+                    if(freeEl < 8)
+                    begin
+                        index <= freeEl;
+                        freeEl <= freeEl + 1;
+                    end
+                    end
+                    else begin
+                        case(hitIndex)
+                                0:  begin
+                                    if(outs[0] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
                                 end
-                                else hitIndex <= hitIndex + 1;  
-                            end
-                            1:  begin  
-                                if(outs[1] == 8'd0) begin
-                                    index <= hitIndex;
-                                    state <= WRITE_VALUE;
+                                1:  begin  
+                                    if(outs[1] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
                                 end
-                                else hitIndex <= hitIndex + 1;  
-                            end
-                            2:  begin
-                                if(outs[2] == 8'd0)begin
-                                    index <= hitIndex;
-                                    state <= WRITE_VALUE;
+                                2:  begin
+                                    if(outs[2] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
+                                end                            
+                                3:  begin
+                                    if(outs[3] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
                                 end
-                                else hitIndex <= hitIndex + 1;  
-                            end                            
-                            3:  begin
-                                if(outs[3] == 8'd0) begin
-                                    index <= hitIndex;
-                                    state <= WRITE_VALUE;
+                                4:  begin
+                                    if(outs[4] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
                                 end
-                                else hitIndex <= hitIndex + 1;  
-                            end
-                    endcase                                 
+                                5:  begin
+                                    if(outs[5] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
+                                end
+                                6:  begin
+                                    if(outs[6] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
+                                end
+                                7:  begin
+                                    if(outs[7] == dataCopy) state <= HIT_UPDATING;
+                                    else hitIndex <= hitIndex + 1;  
+                                end                                                        
+                        endcase                                 
+                    end
                 end
-            end
-            HIT_UPDATING: begin
-                index <= hitIndex;
-            end
-            WRITE_VALUE: begin
-                case (index):
-                0: outs[0] <= data;
-                1: outs[1] <= data;
-                2: outs[2] <= data;
-                3: outs[3] <= data;
-                endcase
-            end
-        endcase
+                HIT_UPDATING: begin
+                    index <= hitIndex;
+                end
+                WRITE_VALUE: begin
+                    case (index):
+                    0: outs[0] <= dataCopy;
+                    1: outs[1] <= dataCopy;
+                    2: outs[2] <= dataCopy;
+                    3: outs[3] <= dataCopy;
+                    4: outs[4] <= dataCopy;
+                    5: outs[5] <= dataCopy;
+                    6: outs[6] <= dataCopy;
+                    7: outs[7] <= dataCopy;
+                    endcase
+                end
+            endcase            
+        end
+
     end
 endmodule
