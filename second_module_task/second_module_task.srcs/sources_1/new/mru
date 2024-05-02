@@ -1,18 +1,30 @@
-module lru_buffer(clk, rst, set, data, enable);
-    input clk, rst, set, enable;
-    input [15:0] data;
+module mru
+#(
+    parameter BUF_SIZE = 8,
+    parameter WIDTH  = 16
+    )
+(
+    input clk,
+    input rst,
+    input set,
+    input [15:0] data,
+    input enable,
+    output indexOut
+    );
+    localparam [1:0] IDLE = 4'b00, CHECKING_HIT = 4'b01, HIT_UPDATING = 4'b10, WRITE_VALUE = 4'b11;
+ 
     reg [15:0] dataCopy;
-    reg [15:0] outs[7:0];
-    reg[3:0] state;
+    reg [WIDTH - 1 :0] outs[BUF_SIZE - 1:0];
+    reg[1:0] state;
     
-    reg [3:0] hitIndex; // reg to counting
-    reg [3:0] index; // last in MRU
-    reg [3:0] freeEl; // first free_el
-
-
-    localparam [3:0] IDLE = 4'b0000, CHECKING_HIT = 4'b0001, FIND_FREE = 4'b0010, HIT_UPDATING = 4'b0011, WRITE_VALUE = 4'b0100;
-
-
+    reg [2:0] hitIndex; // reg to counting
+    reg [2:0] index; // last in MRU
+    assign indexOut = index;
+    reg [3:0] freeEl = 4'b0; // first free_el
+ 
+ 
+ 
+ 
     always @ (posedge clk, negedge rst) begin
         if(enable)
         begin
@@ -28,7 +40,7 @@ module lru_buffer(clk, rst, set, data, enable);
                 outs[7] <= 16'd0;
                 
                 dataCopy <= 16'd0;
-
+ 
                 hitIndex <= 4'd0;
                 index <= 4'd0;
                 freeEl <= 4'd0;
@@ -93,7 +105,7 @@ module lru_buffer(clk, rst, set, data, enable);
                     index <= hitIndex;
                 end
                 WRITE_VALUE: begin
-                    case (index):
+                    case (index)
                     0: outs[0] <= dataCopy;
                     1: outs[1] <= dataCopy;
                     2: outs[2] <= dataCopy;
@@ -106,6 +118,6 @@ module lru_buffer(clk, rst, set, data, enable);
                 end
             endcase            
         end
-
+ 
     end
 endmodule
