@@ -8,22 +8,23 @@ module mru
     input rst,
     input set,
     input [15:0] data,
+    reg [2:0] interestAddr, // addrToOut
+    reg getData, // flagToGetData
     input enable,
-    output indexOut
+    output[15:0] dataToOut,
+    output [3:0] dataSize
     );
-    localparam [1:0] IDLE = 4'b00, CHECKING_HIT = 4'b01, HIT_UPDATING = 4'b10, WRITE_VALUE = 4'b11;
- 
+    localparam [1:0] IDLE = 2'b00, CHECKING_HIT = 2'b01, HIT_UPDATING = 2'b10, WRITE_VALUE = 2'b11;
+
     reg [15:0] dataCopy;
     reg [WIDTH - 1 :0] outs[BUF_SIZE - 1:0];
     reg[1:0] state;
     
     reg [2:0] hitIndex; // reg to counting
     reg [2:0] index; // last in MRU
-    assign indexOut = index;
-    reg [3:0] freeEl = 4'b0; // first free_el
- 
- 
- 
+    reg [3:0] freeEl = 3'b0; // first free_el 
+
+    assign dataSize = freeEl;
  
     always @ (posedge clk, negedge rst) begin
         if(enable)
@@ -41,14 +42,26 @@ module mru
                 
                 dataCopy <= 16'd0;
  
-                hitIndex <= 4'd0;
-                index <= 4'd0;
+                hitIndex <= 3'd0;
+                index <= 3'd0;
                 freeEl <= 4'd0;
                 
                 state <= IDLE;
             end else
             case(state)
                 IDLE: begin
+                    if(getData) begin 
+                        case interestAddr
+                        0: dataToOut <= outs[0];
+                        1: dataToOut <= outs[1];
+                        2: dataToOut <= outs[2];
+                        3: dataToOut <= outs[3];
+                        4: dataToOut <= outs[4];
+                        5: dataToOut <= outs[5];
+                        6: dataToOut <= outs[6];
+                        7: dataToOut <= outs[7];                        
+                        endcase
+                    end
                     if(set) begin 
                         state <= CHECKING_HIT;
                         dataCopy <= data;
