@@ -8,7 +8,6 @@ module mru
     input rst,
     input set,
     input [15:0] data,
-    reg [2:0] interestAddr, // addrToOut
     reg getData, // flagToGetData
     input enable,
     output[15:0] dataToOut,
@@ -53,7 +52,7 @@ module mru
             case(state)
                 IDLE: begin
                     if(getData) begin 
-                        case interestAddr
+                        case data
                         0: dataToOut <= outs[0];
                         1: dataToOut <= outs[1];
                         2: dataToOut <= outs[2];
