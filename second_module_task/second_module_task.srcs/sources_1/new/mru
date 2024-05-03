@@ -46,6 +46,8 @@ module mru
                 index <= 3'd0;
                 freeEl <= 4'd0;
                 
+                dataToOut <= 16'd0;
+
                 state <= IDLE;
             end else
             case(state)
